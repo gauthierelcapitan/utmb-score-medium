@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>UTMB® INDEX — Gauthier Cart</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Oxanium:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+  :root {
+    --card-w: 400px;
+    --card-h: 600px;
+    --card-radius: 22px;
+    --bg-deep: #040b1e;
+    --utmb-dark: #000d44;
+    --utmb-cyan: #00dbff;
+    --glow-1: rgba(0,219,255,.35);
+    --mx: 50%;
+    --my: 50%;
+    --rx: 0deg;
+    --ry: 0deg;
+    --hyp: 0;
+    --o: 0;
+  }
+
+  html,body{
+    height:100%;
+    font-family:'Oxanium',sans-serif;
+    background:var(--bg-deep);
+    overflow:hidden;
+  }
+  body{
+    display:flex;align-items:center;justify-content:center;
+    perspective:1200px;
+  }
+
+  /* ── particles ── */
+  .bg-particles{position:fixed;inset:0;z-index:0;overflow:hidden;pointer-events:none}
+  .bg-particles span{
+    position:absolute;width:2px;height:2px;
+    background:var(--utmb-cyan);border-radius:50%;opacity:0;
+    animation:float-up linear infinite;
+  }
+  @keyframes float-up{
+    0%{transform:translateY(100vh) scale(0);opacity:0}
+    10%{opacity:.6}90%{opacity:.3}
+    100%{transform:translateY(-10vh) scale(1.2);opacity:0}
+  }
+
+  /* ── card wrapper ── */
+  .card-wrapper{
+    position:relative;z-index:1;
+    width:var(--card-w);height:var(--card-h);
+    transform-style:preserve-3d;
+    transform:rotateY(var(--ry)) rotateX(var(--rx));
+    transition:transform .15s ease-out;
+    cursor:grab;will-change:transform;
+  }
+  .card-wrapper:active{cursor:grabbing}
+  .card-wrapper.idle{transition:transform .6s cubic-bezier(.22,.68,0,1.1)}
+
+  /* ── card ── */
+  .card{
+    position:relative;width:100%;height:100%;
+    border-radius:var(--card-radius);
+    background:linear-gradient(165deg, #0c1e56 0%, #000d30 35%, #020824 100%);
+    overflow:hidden;
+    box-shadow:
+      0 0 6px 1px rgba(0,219,255,.08),
+      0 30px 70px -12px rgba(0,0,0,.7),
+      0 0 120px -30px var(--glow-1);
+    border:1.5px solid rgba(0,219,255,.15);
+    transform-style:preserve-3d;
+  }
+
+  /* ── holo M pattern ── */
+  .holo-m-pattern{
+    position:absolute;inset:0;z-index:8;pointer-events:none;
+    border-radius:var(--card-radius);overflow:hidden;
+    opacity:calc(var(--o)*0.9);
+    mix-blend-mode:screen;transition:opacity .3s;
+  }
+  .holo-m-pattern svg{position:absolute;inset:0;width:100%;height:100%}
+
+  /* ── rainbow sheen ── */
+  .card::before{
+    content:'';position:absolute;inset:-2px;
+    border-radius:var(--card-radius);z-index:10;pointer-events:none;
+    background:repeating-linear-gradient(125deg,
+      transparent 0%, rgba(0,219,255,.07) 3%,
+      rgba(180,120,255,.07) 6%, rgba(255,100,200,.05) 9%, transparent 12%);
+    background-size:200% 200%;
+    background-position:var(--mx) var(--my);
+    mix-blend-mode:color-dodge;
+    opacity:calc(var(--o)*0.8);transition:opacity .2s;
+  }
+
+  /* ── glare ── */
+  .card::after{
+    content:'';position:absolute;inset:0;
+    border-radius:var(--card-radius);z-index:11;pointer-events:none;
+    background:radial-gradient(circle at var(--mx) var(--my),
+      rgba(255,255,255,.22) 0%, rgba(255,255,255,.06) 25%, transparent 60%);
+    opacity:var(--o);transition:opacity .2s;
+  }
+
+  /* ── foil ── */
+  .holo-foil{
+    position:absolute;inset:0;border-radius:var(--card-radius);
+    z-index:9;pointer-events:none;
+    background:
+      repeating-conic-gradient(from 0deg at var(--mx) var(--my),
+        rgba(0,219,255,.05) 0deg, rgba(130,80,255,.05) 30deg,
+        rgba(255,60,170,.04) 60deg, rgba(0,219,255,.05) 90deg),
+      repeating-linear-gradient(calc(125deg + var(--ry)),
+        transparent 0%, rgba(0,219,255,.08) 2.5%, rgba(200,150,255,.06) 5%,
+        rgba(255,130,200,.05) 7.5%, transparent 10%);
+    mix-blend-mode:screen;
+    opacity:calc(var(--o)*1.2);filter:brightness(1.1);transition:opacity .3s;
+  }
+
+  /* ── sparkles ── */
+  .sparkles{
+    position:absolute;inset:0;z-index:12;pointer-events:none;
+    overflow:hidden;border-radius:var(--card-radius);
+    opacity:calc(var(--o)*1.5);transition:opacity .3s;
+  }
+  .sparkles canvas{width:100%;height:100%}
+
+  /* ── grid ── */
+  .grid-tex{
+    position:absolute;inset:0;z-index:2;pointer-events:none;
+    border-radius:var(--card-radius);
+    background-image:
+      linear-gradient(rgba(0,219,255,.025) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,219,255,.025) 1px, transparent 1px);
+    background-size:22px 22px;
+    mask-image:radial-gradient(ellipse 80% 70% at 50% 50%, black 30%, transparent 80%);
+    -webkit-mask-image:radial-gradient(ellipse 80% 70% at 50% 50%, black 30%, transparent 80%);
+  }
+
+  /* ══════════════════════════════════════
+     BANNER — full-width image at top
+     ══════════════════════════════════════ */
+  .banner{
+    position:absolute;top:0;left:0;right:0;
+    height:160px;z-index:3;overflow:hidden;
+    border-radius:var(--card-radius) var(--card-radius) 0 0;
+  }
+  .banner img{
+    width:100%;height:100%;object-fit:cover;object-position:center 30%;
+    filter:brightness(.75) contrast(1.1) saturate(1.1);
+  }
+  .banner-fade{
+    position:absolute;inset:0;
+    background:linear-gradient(to bottom,
+      rgba(2,8,36,.15) 0%,
+      rgba(2,8,36,.5) 60%,
+      #020824 100%);
+  }
+
+  /* ══════════════════════════════════════
+     PROFILE PHOTO — glassmorphic circle
+     ══════════════════════════════════════ */
+  .profile-ring{
+    position:absolute;
+    top:105px;  /* overlaps banner */
+    left:50%;
+    transform:translateX(-50%) translateZ(30px);
+    z-index:7;
+    width:120px;height:120px;
+    border-radius:50%;
+    /* glassmorphic border */
+    background:linear-gradient(135deg,
+      rgba(255,255,255,.18) 0%,
+      rgba(0,219,255,.12) 40%,
+      rgba(255,255,255,.08) 100%);
+    padding:4px;
+    box-shadow:
+      0 8px 32px rgba(0,0,0,.4),
+      0 0 0 1px rgba(0,219,255,.15),
+      0 0 30px rgba(0,219,255,.12),
+      inset 0 0 20px rgba(255,255,255,.05);
+    backdrop-filter:blur(12px);
+    -webkit-backdrop-filter:blur(12px);
+  }
+  .profile-ring::before{
+    content:'';
+    position:absolute;inset:-2px;
+    border-radius:50%;
+    background:conic-gradient(
+      from 0deg,
+      rgba(0,219,255,.25),
+      rgba(130,80,255,.15),
+      rgba(255,60,170,.12),
+      rgba(0,219,255,.25));
+    z-index:-1;
+    animation:ring-spin 8s linear infinite;
+  }
+  @keyframes ring-spin{
+    to{transform:rotate(360deg)}
+  }
+  .profile-photo{
+    width:100%;height:100%;
+    border-radius:50%;
+    object-fit:cover;
+    object-position:center 20%;
+    display:block;
+  }
+
+  /* ══════════════════════════════════════
+     CONTENT AREA
+     ══════════════════════════════════════ */
+  .card-content{
+    position:relative;z-index:5;
+    display:flex;flex-direction:column;align-items:center;
+    height:100%;
+    padding-top:236px; /* below banner+photo */
+    text-align:center;
+  }
+
+  /* UTMB INDEX logo replaces text label */
+  .utmb-logo{
+    width:160px;
+    filter:drop-shadow(0 2px 14px rgba(0,219,255,.3));
+    transform:translateZ(20px);
+    margin-bottom:4px;
+  }
+
+  .runner-name{
+    font-size:14px;font-weight:600;letter-spacing:5px;
+    text-transform:uppercase;color:rgba(255,255,255,.55);
+    transform:translateZ(12px);
+    margin-top:4px;
+  }
+
+  .divider{
+    width:65%;height:1px;
+    background:linear-gradient(90deg, transparent, rgba(0,219,255,.35), transparent);
+    margin:12px 0 14px;
+  }
+
+  .score{
+    font-size:128px;font-weight:800;line-height:1;color:#fff;letter-spacing:-3px;
+    text-shadow:
+      0 0 40px rgba(0,219,255,.35),
+      0 0 80px rgba(0,219,255,.12),
+      0 4px 12px rgba(0,0,0,.5);
+    transform:translateZ(35px);
+  }
+
+  .score-sub{
+    font-size:11px;font-weight:600;letter-spacing:4px;
+    text-transform:uppercase;color:rgba(0,219,255,.5);
+    margin-top:4px;transform:translateZ(12px);
+  }
+
+  /* ── footer ── */
+  .card-footer{
+    position:absolute;bottom:32px;left:0;right:0;
+    display:flex;justify-content:center;gap:36px;z-index:5;
+  }
+  .stat{text-align:center;transform:translateZ(10px)}
+  .stat-val{font-size:16px;font-weight:700;color:#fff}
+  .stat-lbl{
+    font-size:8px;font-weight:400;letter-spacing:3px;
+    text-transform:uppercase;color:rgba(255,255,255,.28);margin-top:2px;
+  }
+  .stat-val .flag{margin-right:4px;font-size:14px}
+
+  /* ── date ── */
+  .card-date{
+    position:absolute;bottom:12px;left:0;right:0;
+    text-align:center;z-index:5;
+    font-size:8px;font-weight:400;letter-spacing:2px;
+    text-transform:uppercase;color:rgba(255,255,255,.18);
+    transform:translateZ(5px);
+  }
+
+  /* ── mountains ── */
+  .mountains{
+    position:absolute;bottom:0;left:0;right:0;height:110px;z-index:3;pointer-events:none;
+    border-radius:0 0 var(--card-radius) var(--card-radius);overflow:hidden;
+  }
+  .mountains svg{position:absolute;bottom:0;width:100%;height:auto}
+
+  /* ── ring glow ── */
+  .ring-glow{
+    position:absolute;top:68%;left:50%;width:210px;height:210px;
+    transform:translate(-50%,-50%) translateZ(5px);border-radius:50%;
+    border:1.5px solid rgba(0,219,255,.07);
+    box-shadow:0 0 50px rgba(0,219,255,.04),inset 0 0 50px rgba(0,219,255,.02);
+    animation:ring-pulse 4s ease-in-out infinite;z-index:4;pointer-events:none;
+  }
+  .ring-glow::after{
+    content:'';position:absolute;inset:-22px;border-radius:50%;
+    border:1px solid rgba(0,219,255,.03);animation:ring-pulse 4s ease-in-out infinite .8s;
+  }
+  @keyframes ring-pulse{
+    0%,100%{opacity:.5;transform:translate(-50%,-50%) translateZ(5px) scale(1)}
+    50%{opacity:1;transform:translate(-50%,-50%) translateZ(5px) scale(1.05)}
+  }
+
+  .reflection{
+    position:absolute;bottom:-60px;left:50%;transform:translateX(-50%);
+    width:300px;height:60px;
+    background:radial-gradient(ellipse, rgba(0,219,255,.15) 0%, transparent 70%);
+    filter:blur(20px);z-index:0;pointer-events:none;
+  }
+
+  @media(max-width:440px){
+    :root{--card-w:345px;--card-h:520px}
+    .banner{height:130px}
+    .profile-ring{top:80px;width:100px;height:100px}
+    .card-content{padding-top:195px}
+    .score{font-size:100px}
+    .utmb-logo{width:130px}
+  }
+</style>
+</head>
+<body>
+
+<div class="bg-particles" id="particles"></div>
+
+<div class="card-wrapper idle" id="cardWrap">
+  <div class="card" id="card">
+    <div class="grid-tex"></div>
+
+    <!-- Holographic M-logo tiled pattern -->
+    <div class="holo-m-pattern">
+      <svg viewBox="0 0 400 600" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <path id="utmb-m" d="m16.765 2-5.016 11.014-5.552-9.925L2 20.73h4.102l1.485-7.53L11.75 22l4.017-9.294 1.976 8.023H22z" fill-rule="evenodd"/>
+          <linearGradient id="hg1" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#00dbff" stop-opacity=".14"/>
+            <stop offset="30%" stop-color="#a855f7" stop-opacity=".12"/>
+            <stop offset="60%" stop-color="#ff3caa" stop-opacity=".10"/>
+            <stop offset="100%" stop-color="#00dbff" stop-opacity=".14"/>
+            <animate attributeName="x1" values="0%;100%;0%" dur="5s" repeatCount="indefinite"/>
+            <animate attributeName="y1" values="0%;60%;0%" dur="7s" repeatCount="indefinite"/>
+          </linearGradient>
+          <linearGradient id="hg2" x1="100%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stop-color="#ff3caa" stop-opacity=".12"/>
+            <stop offset="50%" stop-color="#00dbff" stop-opacity=".16"/>
+            <stop offset="100%" stop-color="#a855f7" stop-opacity=".10"/>
+            <animate attributeName="x1" values="100%;0%;100%" dur="6s" repeatCount="indefinite"/>
+          </linearGradient>
+          <pattern id="mt1" x="0" y="0" width="48" height="44" patternUnits="userSpaceOnUse" patternTransform="rotate(-12)">
+            <use href="#utmb-m" transform="scale(1.8)" fill="url(#hg1)"/>
+          </pattern>
+          <pattern id="mt2" x="22" y="18" width="60" height="55" patternUnits="userSpaceOnUse" patternTransform="rotate(18)">
+            <use href="#utmb-m" transform="scale(2.3)" fill="url(#hg2)"/>
+          </pattern>
+        </defs>
+        <rect width="400" height="600" fill="url(#mt1)"/>
+        <rect width="400" height="600" fill="url(#mt2)" opacity=".55"/>
+      </svg>
+    </div>
+
+    <div class="holo-foil"></div>
+    <div class="sparkles"><canvas id="sparkleCanvas"></canvas></div>
+
+    <!-- ═══ Banner ═══ -->
+    <div class="banner">
+      <img src="https://res.cloudinary.com/utmb-world/image/upload/q_auto/f_auto/c_fill,g_auto/if_w_gt_1920/c_scale,w_1920/if_end/v1/worldseries/Members/7d919d42-507b-4967-b3aa-291026897b4e" alt="Banner"/>
+      <div class="banner-fade"></div>
+    </div>
+
+    <!-- ═══ Profile photo with glassmorphic ring ═══ -->
+    <div class="profile-ring">
+      <img class="profile-photo" src="https://res.cloudinary.com/utmb-world/image/upload/q_auto/f_auto/c_fill,g_auto/if_w_gt_1920/c_scale,w_1920/if_end/v1/worldseries/Members/0b8a6c7f-15c7-4518-8063-68c779bda57e" alt="Gauthier Cart"/>
+    </div>
+
+    <div class="mountains">
+      <svg viewBox="0 0 400 110" preserveAspectRatio="none" fill="none">
+        <path d="M0 110 L0 75 L50 42 L90 65 L130 22 L170 55 L200 12 L240 50 L280 28 L310 60 L350 38 L400 70 L400 110Z" fill="rgba(0,10,40,.45)"/>
+        <path d="M0 110 L0 90 L60 60 L100 82 L150 46 L190 72 L230 44 L270 70 L320 54 L370 78 L400 66 L400 110Z" fill="rgba(0,8,30,.65)"/>
+      </svg>
+    </div>
+
+    <div class="ring-glow"></div>
+
+    <!-- ═══ Content ═══ -->
+    <div class="card-content">
+      <!-- UTMB INDEX SVG logo as label -->
+      <svg class="utmb-logo" viewBox="0 0 118 30" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M59.7946 4.2959L53.967 29.9996H118V4.2959H59.7946Z" fill="#00DBFF"/>
+        <path d="M0 0V25.7037H55.0267L61.0266 0H0Z" fill="#000D44"/>
+        <path d="M66.2477 11.3779V23.4036H63.2988V11.3779H66.2477Z" fill="#000D44"/>
+        <path d="M68.635 23.4036V11.3779H71.5839L77.0285 18.7363V11.3779H79.9774V23.4036H77.0285L71.5839 16.0452V23.4036H68.635Z" fill="#000D44"/>
+        <path d="M82.3708 23.4036V11.3779H86.2452C87.3878 11.3779 89.2963 11.5398 90.7643 13.0371C92.0983 14.386 92.3536 16.1194 92.3536 17.4211C92.3536 19.0061 91.9771 20.4157 90.8664 21.5825C89.9601 22.5402 88.441 23.4036 86.5006 23.4036H82.3708ZM85.3197 20.7529H85.9197C86.6346 20.7529 87.6431 20.6787 88.409 19.8896C88.7856 19.5119 89.2771 18.7565 89.2771 17.4211C89.2771 16.3015 88.9516 15.3505 88.3899 14.7907C87.6878 14.1027 86.7686 14.0353 86.0346 14.0353H85.3197V20.7597V20.7529Z" fill="#000D44"/>
+        <path d="M100.696 14.0286H97.1791V16.0317H100.505V18.6823H97.1791V20.7529H100.696V23.4036H94.2302V11.3779H100.696V14.0286Z" fill="#000D44"/>
+        <path d="M105.828 16.9895L102.177 11.3848H105.828L107.519 14.5008L109.275 11.3848H112.906L109.204 16.9895L113.506 23.4104H109.926L107.5 19.4985L104.941 23.4104H101.373L105.828 16.9895Z" fill="#000D44"/>
+        <path d="M14.3743 6.73047V13.6369C14.3743 14.8038 14.3105 15.0803 14.0935 15.4782C13.7616 16.0245 13.1743 16.355 12.5105 16.355C11.8467 16.355 11.2148 16.0178 10.9403 15.4917C10.6914 15.0466 10.6531 14.7633 10.6531 13.6369V6.73047H7.81274V14.0821C7.81274 15.5052 8.08082 16.5169 8.68081 17.3532C9.47867 18.4796 10.9084 19.1473 12.5105 19.1473C14.1126 19.1473 15.5296 18.4796 16.3403 17.3532C16.9402 16.5169 17.2083 15.5052 17.2083 14.0821V6.73047H14.3743Z" fill="white"/>
+        <path d="M18.2358 6.73047V9.43506H21.1017V18.9719H23.9421V9.43506H26.9421V6.73047H18.2358Z" fill="white"/>
+        <path d="M30.8485 13.5632L29.8081 18.9656H26.9358L29.8783 6.31948L33.7655 13.435L37.2824 5.53711L40.9462 18.9656H37.9654L36.5803 13.2125L33.7655 19.8761L30.8485 13.5632Z" fill="white"/>
+        <path d="M45.1207 13.9815H45.5292C46.3908 13.9815 46.6462 14.0489 46.9334 14.2445C47.2334 14.4468 47.3866 14.7638 47.3866 15.1618C47.3866 15.7553 47.1823 16.3623 45.6568 16.3623H45.1207V13.9815ZM45.1207 9.36141H45.3632C46.4674 9.36141 46.6079 9.9347 46.6079 10.4405C46.6079 10.9464 46.4674 11.5197 45.344 11.5197H45.1143V9.36816L45.1207 9.36141ZM42.2803 6.77148V18.932H46.2696C48.7461 18.932 50.2844 17.5426 50.2844 15.3169C50.2844 14.4064 49.9461 13.4824 49.4036 12.9091C49.1355 12.6258 48.8993 12.4504 48.5674 12.3088C48.6568 12.2144 48.727 12.1132 48.8036 11.9986C49.1099 11.5197 49.2887 10.8385 49.2887 10.1775C49.2887 9.13884 48.8674 8.12715 48.178 7.53362C47.5525 7.00755 46.6462 6.77148 45.3121 6.77148H42.2803Z" fill="white"/>
+        <path d="M52.0778 13.0307C51.4523 13.0307 50.9417 12.4709 50.9417 11.7829C50.9417 11.095 51.4523 10.5352 52.0778 10.5352C52.7033 10.5352 53.214 11.095 53.214 11.7829C53.214 12.4709 52.7033 13.0307 52.0778 13.0307ZM52.0778 10.751C51.5608 10.751 51.1459 11.2096 51.1459 11.7762C51.1459 12.3427 51.5672 12.8013 52.0778 12.8013C52.5884 12.8013 53.0097 12.3427 53.0097 11.7762C53.0097 11.2096 52.5884 10.751 52.0778 10.751ZM52.3076 12.5248L51.9757 11.8571V12.5248H51.6693V11.0005H52.0906C52.4033 11.0005 52.5565 11.2029 52.5565 11.4322C52.5565 11.6345 52.4416 11.7964 52.2629 11.8301L52.6459 12.5316H52.3012L52.3076 12.5248ZM52.0587 11.2703H51.9757V11.5941H52.0587C52.1735 11.5941 52.2438 11.5603 52.2438 11.4457C52.2438 11.304 52.1799 11.2703 52.0587 11.2703Z" fill="white"/>
+      </svg>
+
+      <div class="runner-name">Gauthier Cart</div>
+      <div class="divider"></div>
+      <div class="score">579</div>
+      <div class="score-sub">Running Index</div>
+    </div>
+
+    <div class="card-footer">
+      <div class="stat"><div class="stat-val"><span class="flag">🇫🇷</span> 35-39 H</div><div class="stat-lbl">Catégorie</div></div>
+      <div class="stat"><div class="stat-val">LIVEWALL®</div><div class="stat-lbl">Club</div></div>
+    </div>
+    <div class="card-date" id="cardDate"></div>
+  </div>
+  <div class="reflection"></div>
+</div>
+
+<script>
+(() => {
+  /* date */
+  const dateEl = document.getElementById('cardDate');
+  const now = new Date();
+  const opts = {day:'2-digit', month:'long', year:'numeric'};
+  dateEl.textContent = now.toLocaleDateString('fr-FR', opts);
+
+  /* particles */
+  const pCont = document.getElementById('particles');
+  for(let i=0;i<50;i++){
+    const s = document.createElement('span');
+    s.style.left = Math.random()*100+'%';
+    s.style.animationDuration = (6+Math.random()*10)+'s';
+    s.style.animationDelay = Math.random()*8+'s';
+    s.style.width = s.style.height = (1+Math.random()*2.5)+'px';
+    pCont.appendChild(s);
+  }
+
+  /* sparkles */
+  const cv = document.getElementById('sparkleCanvas');
+  const ctx = cv.getContext('2d');
+  let sparks = [];
+  function resizeCanvas(){
+    const r = cv.parentElement.getBoundingClientRect();
+    cv.width = r.width*2; cv.height = r.height*2;
+    cv.style.width = r.width+'px'; cv.style.height = r.height+'px';
+    ctx.scale(2,2);
+  }
+  resizeCanvas();
+  window.addEventListener('resize',resizeCanvas);
+  for(let i=0;i<90;i++){
+    sparks.push({x:Math.random()*420,y:Math.random()*620,s:Math.random()*1.8+.4,
+      a:Math.random(),sp:Math.random()*0.02+0.005,d:Math.random()>.5?1:-1});
+  }
+  function drawSparks(){
+    ctx.clearRect(0,0,cv.width,cv.height);
+    const o = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--o'))||0;
+    sparks.forEach(p=>{
+      p.a += p.sp*p.d;
+      if(p.a>=1) p.d=-1;
+      if(p.a<=0){p.d=1;p.x=Math.random()*420;p.y=Math.random()*620;}
+      ctx.beginPath();ctx.arc(p.x,p.y,p.s,0,Math.PI*2);
+      ctx.fillStyle=`rgba(255,255,255,${p.a*o*.7})`;ctx.fill();
+    });
+    requestAnimationFrame(drawSparks);
+  }
+  drawSparks();
+
+  /* ── interaction state ── */
+  const wrap = document.getElementById('cardWrap');
+  const root = document.documentElement;
+  let bounds;
+  let gyroActive = false;   // true once gyroscope takes over
+  let mouseActive = false;  // true while mouse is over card
+
+  function updateBounds(){ bounds = wrap.getBoundingClientRect(); }
+  updateBounds();
+  window.addEventListener('resize',updateBounds);
+
+  /* ── apply holo values (shared by mouse & gyro) ── */
+  function applyTilt(rx, ry, mx, my, intensity){
+    root.style.setProperty('--rx', rx+'deg');
+    root.style.setProperty('--ry', ry+'deg');
+    root.style.setProperty('--mx', mx+'%');
+    root.style.setProperty('--my', my+'%');
+    root.style.setProperty('--hyp', Math.min(intensity,1));
+    root.style.setProperty('--o', Math.min(intensity+0.3,1));
+  }
+
+  /* ══════════════════════════════════════
+     GYROSCOPE — DeviceOrientation
+     No touch/drag needed, just tilt the phone
+     ══════════════════════════════════════ */
+  // Smoothing: lerp current values for fluid motion
+  let gyroCurrent = {rx:0, ry:0, mx:50, my:50};
+  let gyroTarget  = {rx:0, ry:0, mx:50, my:50};
+  const LERP = 0.12; // smoothing factor (0 = frozen, 1 = instant)
+
+  function lerp(a,b,t){ return a + (b - a) * t; }
+
+  function gyroLoop(){
+    if(!gyroActive) return;
+    gyroCurrent.rx = lerp(gyroCurrent.rx, gyroTarget.rx, LERP);
+    gyroCurrent.ry = lerp(gyroCurrent.ry, gyroTarget.ry, LERP);
+    gyroCurrent.mx = lerp(gyroCurrent.mx, gyroTarget.mx, LERP);
+    gyroCurrent.my = lerp(gyroCurrent.my, gyroTarget.my, LERP);
+    const intensity = Math.sqrt(
+      Math.pow(gyroCurrent.rx/18, 2) + Math.pow(gyroCurrent.ry/18, 2)
+    );
+    applyTilt(gyroCurrent.rx, gyroCurrent.ry, gyroCurrent.mx, gyroCurrent.my, intensity);
+    requestAnimationFrame(gyroLoop);
+  }
+
+  function handleOrientation(e){
+    if(mouseActive) return; // mouse takes priority on hybrid devices
+    // beta  = front/back tilt (-180 to 180), ~0 when flat, ~90 when vertical
+    // gamma = left/right tilt (-90 to 90)
+    const beta  = e.beta  || 0;
+    const gamma = e.gamma || 0;
+
+    // Normalize: phone held ~vertically (beta ≈ 45-90)
+    // We center around beta=60 (comfortable viewing angle)
+    const centeredBeta = Math.max(-30, Math.min(30, beta - 60));
+    const centeredGamma = Math.max(-30, Math.min(30, gamma));
+
+    // Map to tilt angles (max ±18deg like the mouse version)
+    const maxTilt = 18;
+    const rx = -(centeredBeta / 30) * maxTilt;  // front/back → rotateX
+    const ry =  (centeredGamma / 30) * maxTilt;  // left/right → rotateY
+
+    // Map to holo highlight position (0-100%)
+    const mx = 50 + (centeredGamma / 30) * 50;
+    const my = 50 + (centeredBeta / 30) * 50;
+
+    gyroTarget = {rx, ry, mx, my};
+
+    if(!gyroActive){
+      gyroActive = true;
+      wrap.classList.remove('idle');
+      gyroLoop();
+    }
+  }
+
+  function startGyro(){
+    window.addEventListener('deviceorientation', handleOrientation, true);
+  }
+
+  // iOS 13+ requires explicit permission request on user gesture
+  function requestGyro(){
+    if(typeof DeviceOrientationEvent !== 'undefined'
+       && typeof DeviceOrientationEvent.requestPermission === 'function'){
+      // iOS — show a button
+      const btn = document.createElement('button');
+      btn.textContent = '🔄 Activer le gyroscope';
+      Object.assign(btn.style, {
+        position:'fixed', bottom:'24px', left:'50%', transform:'translateX(-50%)',
+        zIndex:'9999', padding:'14px 28px', border:'1.5px solid rgba(0,219,255,.4)',
+        borderRadius:'12px', background:'rgba(0,13,68,.85)',
+        backdropFilter:'blur(10px)', color:'#00dbff',
+        fontFamily:'Oxanium, sans-serif', fontSize:'14px', fontWeight:'600',
+        letterSpacing:'1px', cursor:'pointer',
+        boxShadow:'0 4px 30px rgba(0,219,255,.15)',
+        transition:'all .3s ease'
+      });
+      btn.addEventListener('mouseenter',()=> btn.style.background='rgba(0,219,255,.15)');
+      btn.addEventListener('mouseleave',()=> btn.style.background='rgba(0,13,68,.85)');
+      document.body.appendChild(btn);
+      btn.addEventListener('click', async ()=>{
+        try {
+          const perm = await DeviceOrientationEvent.requestPermission();
+          if(perm === 'granted'){
+            startGyro();
+            btn.style.opacity='0';
+            setTimeout(()=>btn.remove(), 400);
+          }
+        } catch(err){ console.warn('Gyro permission denied', err); }
+      });
+    } else if('DeviceOrientationEvent' in window){
+      // Android / desktop with gyro — no permission needed
+      startGyro();
+      // Check if it actually fires (some desktops have the event but no sensor)
+      let gotEvent = false;
+      const check = ()=> { gotEvent = true; };
+      window.addEventListener('deviceorientation', check);
+      setTimeout(()=>{
+        window.removeEventListener('deviceorientation', check);
+        if(!gotEvent) gyroActive = false; // no sensor, fall back to idle/mouse
+      }, 1000);
+    }
+  }
+
+  requestGyro();
+
+  /* ══════════════════════════════════════
+     MOUSE — desktop fallback
+     ══════════════════════════════════════ */
+  function interactMouse(x,y){
+    const cx = bounds.left+bounds.width/2, cy = bounds.top+bounds.height/2;
+    const dx = (x-cx)/(bounds.width/2), dy = (y-cy)/(bounds.height/2);
+    const ry = dx*18, rx = -dy*18, hyp = Math.sqrt(dx*dx+dy*dy);
+    const px = ((x-bounds.left)/bounds.width)*100;
+    const py = ((y-bounds.top)/bounds.height)*100;
+    applyTilt(rx, ry, px, py, hyp);
+  }
+
+  wrap.addEventListener('mouseenter',()=>{
+    mouseActive = true;
+    wrap.classList.remove('idle');
+    updateBounds();
+  });
+  wrap.addEventListener('mousemove',e=> interactMouse(e.clientX, e.clientY));
+  wrap.addEventListener('mouseleave',()=>{
+    mouseActive = false;
+    if(!gyroActive){
+      wrap.classList.add('idle');
+      applyTilt(0,0,50,50,0);
+    }
+  });
+
+  /* ══════════════════════════════════════
+     IDLE float — only when no gyro & no mouse
+     ══════════════════════════════════════ */
+  let t=0;
+  function idleFloat(){
+    if(!gyroActive && !mouseActive && wrap.classList.contains('idle')){
+      t+=0.008;
+      root.style.setProperty('--rx',Math.cos(t*0.7)*1.5+'deg');
+      root.style.setProperty('--ry',Math.sin(t)*2+'deg');
+    }
+    requestAnimationFrame(idleFloat);
+  }
+  idleFloat();
+})();
+</script>
+</body>
+</html>
